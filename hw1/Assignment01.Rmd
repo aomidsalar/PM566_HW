@@ -1,0 +1,193 @@
+---
+title: "Assignment01"
+author: "Audrey Omidsalar"
+date: "9/24/2021"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('leaflet')
+library('lubridate')
+library('data.table')
+library('tidyverse')
+library('ggplot2')
+library('dplyr')
+```
+
+## Step 1
+### Download the 2004 and 2019 EPA Air Quality PM2.5 data from all sites in California, and check for any data issues
+#### Reading in the 2004 dataset as `data2004` and the 2019 dataset as `data2019`
+```{r import, cache=TRUE}
+data2004 <- data.table::fread("ad_viz_plotval_data_2004.csv")
+data2019 <- data.table::fread("ad_viz_plotval_data_2019.csv")
+```
+
+#### Checking the dimensions of each dataset
+The 2004 dataset has 19,233 rows and 20 columns. The 2019 dataset has 53,086 rows and 20 columns.
+```{r check-dimensions, cache=TRUE}
+dim(data2004)
+dim(data2019)
+```
+#### Checking headers and footers of `data2004`
+```{r, cache=TRUE}
+head(data2004)
+tail(data2004)
+```
+#### Checking headers and footers of `data2019`
+```{r, cache=TRUE}
+head(data2019)
+tail(data2019)
+```
+#### Checking variable names and variable types of both datasets.
+```{r step1, cache=TRUE}
+summary(data2004)
+summary(data2019)
+```
+There are spaces in the column names. This could cause issues later on when calling variables, so will be renamed.
+
+## Step 2
+### Combine the two years of data into one data frame. Use the Date variable to create a new column for year, which will serve as an identifier. Change the names of the key variables so that they are easier to refer to in your code.
+```{r step2, cache=TRUE}
+##add column with year number in the two datasets
+data2004[, year := 2004]
+data2019[, year := 2019]
+##combine the datasets
+combined <- rbind(data2004, data2019)
+##change column names
+setnames(combined, "Daily Mean PM2.5 Concentration", "PM2.5")
+setnames(combined,"Site ID", "Site_ID")
+setnames(combined, "Site Name", "Site_Name")
+setnames(combined, "SITE_LATITUDE", "lat")
+setnames(combined, "SITE_LONGITUDE", "lon")
+```
+## Step 3
+### Create a basic map in leaflet() that shows the locations of the sites (make sure to use different colors for each year). Summarize the spatial distribution of the monitoring sites.
+There are more monitoring sites in 2019 compared to in 2004, which makes sense given the number of observations in the two initial datasets. The monitoring sites seem to be mostly clustered around major cities: in southern California, there are more monitoring sites along the coast then in the inland regions; in central California, there is a cluster of monitoring sites near Fresno; in northern California, there are clusters in the Bay Area and other larger cities (Sacramento, Eureka). Overall, there is a pretty fair distribution of monitoring sites across the state, with the empty regions corresponding to areas that are likely largely uninhabited.
+```{r leaflet, cache=TRUE}
+year.pal <- colorFactor(c('purple', 'pink'), domain = combined$year)
+leaflet(combined) %>%
+  addProviderTiles('CartoDB.Positron') %>%
+  addCircles(lat = ~lat, lng=~lon,
+     label = ~paste0(round(year,2), 'year'), color = ~ year.pal(year),
+     opacity = 1, fillOpacity = 1, radius = 500) %>%
+     addLegend('bottomleft', pal=year.pal, values=combined$year,
+          title='Year', opacity=1)
+```
+## Step 4
+### Check for any missing or implausible values of PM2.5 in the combined dataset. Explore the proportions of each and provide a summary of any temporal patterns you see in these observations
+The maximum is quite high in comparison to the median, which suggests there are outlier(s) in this dataset. Many of the highest PM2.5 values seem to be coming from the "Yosemite NP-Yosemite Village Visitor Center" Site and occurred around the same time -- perhaps there was a natural disaster at that time?
+
+The negative PM2.5 values do not make sense, so they will be removed. The proportion of negative PM2.5 values over the total amount of PM2.5 data is 0.0039. There are no NA values for PM2.5 in this dataset.
+```{r filtering, cache=TRUE}
+summary(combined$PM2.5)
+ggplot(combined, mapping=aes(x=1, y=PM2.5)) + 
+  geom_violin() + 
+  facet_grid(~ year)
+combined2 <- combined[order(-PM2.5)]
+head(combined2)
+dim(combined[PM2.5<0])[1]/dim(combined)[1]
+dim(combined[is.na(PM2.5)])
+combined3 <- combined[PM2.5>=0]
+data2004_v2 <- data2004[`Daily Mean PM2.5 Concentration`>=0]
+data2019_v2 <- data2019[`Daily Mean PM2.5 Concentration` >=0]
+```
+## Step 5
+### Explore the main question of interest at three different spatial levels (state, county, site in Los Angeles).
+### Question of Interest: Have daily concentrations of PM2.5 (particulate matter air pollution with aerodynamic diameter less than 2.5μm) decreased in California over the last 15 years (from 2004 to 2019)?
+### State Level
+These summary statistics of "Daily Mean PM2.5 Concentration" as well as the "Daily AQI Value" of each year's data show that both the mean daily 2.5 concentration and the mean daily AQI value have decreased from 2004 to 2019; the same relationship is seen with the median scores. The AQI value is the air quality index score, which is an overall indicator of air quality due to pollutants. I have included this in order to gain information about the changes in air quality overall across these two years.
+```{r state summary}
+summary(data2004_v2$`Daily Mean PM2.5 Concentration`)
+summary(data2004_v2$DAILY_AQI_VALUE)
+summary(data2019_v2$`Daily Mean PM2.5 Concentration`)
+summary(data2019_v2$DAILY_AQI_VALUE)
+```
+Here are boxplots for the daily Mean PM2.5 Concentration per Year. 2004 has a greater IQR than 2019, and 2004 has outliers with higher PM2.5 concentrations (though both years have many outliers), which are likely contributing to the higher overall average PM2.5 value for this year.
+```{r state boxplot, cache=TRUE}
+ggplot(combined3) +
+  geom_boxplot(mapping=aes(x=year, y = PM2.5, group=year)) +
+  labs(title = "Statewide PM2.5 Concentrations", x  = "Year", y = "Daily Mean PM2.5 Concentration")
+```
+The histograms of the daily mean PM2.5 concentrations for each year are skewed to the right, but the outliers are likely due to disaster events (ex. wildfires). However, the 2004 graph has higher daily mean PM2.5 concentrations, as seen on the x axes.
+```{r state hist, cache=TRUE}
+hist(data2004_v2$`Daily Mean PM2.5 Concentration`, breaks=100)
+hist(data2019_v2$`Daily Mean PM2.5 Concentration`, breaks=100)
+```
+```{r avg state, cache=TRUE}
+## Making a data table with average PM2.5 and AQI values
+combined3_avg <- combined3[, .(
+  PM2.5     = mean(PM2.5, na.rm=TRUE),
+  AQI       = mean(DAILY_AQI_VALUE, na.rm=TRUE), STATE, COUNTY), by = "year"]
+combined3_avg
+```
+These line plots show the state-wide average PM2.5 Concentrations per year as well as the average AQI scores per year are decreasing from 2004 to 2019.
+```{r state lineplot, cache=TRUE}
+ggplot(combined3_avg) +
+  geom_point(mapping=aes(x=year, y = PM2.5, color="blue"), show.legend = FALSE) +
+  geom_line(mapping=aes(x=year, y = PM2.5, color="blue"), show.legend = FALSE) +
+  labs(title = "PM2.5 Averages Per Year", x  = "Year", y = "Average PM2.5 Concentration")
+ggplot(combined3_avg) +
+  geom_point(mapping=aes(x=year, y = AQI, color="red"), show.legend = FALSE) +
+  geom_line(mapping=aes(x=year, y = AQI, color="red"), show.legend = FALSE) +
+  labs(title = "AQI Averages Per Year", x  = "Year", y = "Average AQI")
+```
+### County-wide
+```{r county-make datasets, cache=TRUE}
+##Calculate average PM2.5 and AQI by County per year
+county_2004 <- data2004_v2[, .(
+  PM2.5     = mean(`Daily Mean PM2.5 Concentration`, na.rm=TRUE),
+  AQI       = mean(DAILY_AQI_VALUE, na.rm=TRUE), STATE), by = "COUNTY"]
+county_2019 <- data2019_v2[, .(
+  PM2.5     = mean(`Daily Mean PM2.5 Concentration`, na.rm=TRUE),
+  AQI       = mean(DAILY_AQI_VALUE, na.rm=TRUE), STATE), by = "COUNTY"]
+##Combine the two datasets and add year variable
+county_2004[, year := 2004]
+county_2019[, year := 2019]
+county_combined <- rbind(county_2004, county_2019)
+```
+Here, the average PM2.5 concentrations can be visualized for each county per year.
+```{r}
+unique(county_2004, by = "COUNTY")
+unique(county_2019, by = "COUNTY")
+```
+This line plot shows the average PM2.5 concentration by County in 2004 and 2019. Most of the counties' average PM2.5 concentrations have decreased, as seen by the negative slope.
+```{r line plot}
+ggplot(county_combined) +
+  geom_point(mapping=aes(x=year, y = PM2.5, group=COUNTY, color=COUNTY)) +
+  geom_line(mapping=aes(x=year, y = PM2.5, group=COUNTY, color=COUNTY)) +
+  labs(title = "County-wide PM2.5 Concentrations", x  = "Year", y = "Average PM2.5 Concentration")
+```
+### Sites in Los Angeles 
+```{r subset LA, cache=TRUE}
+##Subset
+LA_2004 <- data2004_v2[COUNTY == "Los Angeles"]
+LA_2019 <- data2019_v2[COUNTY == "Los Angeles"]
+##Calculate average PM2.5 and AQI by site name
+LA_2004_avg <- LA_2004[, .(
+  PM2.5     = mean(`Daily Mean PM2.5 Concentration`, na.rm=TRUE),
+  AQI       = mean(DAILY_AQI_VALUE, na.rm=TRUE),`Site ID`), by = "Site Name"]
+LA_2019_avg <- LA_2019[, .(
+  PM2.5     = mean(`Daily Mean PM2.5 Concentration`, na.rm=TRUE),
+  AQI       = mean(DAILY_AQI_VALUE, na.rm=TRUE),`Site ID`), by = "Site Name"]
+##Combine the datasets
+LA_2004_avg[, year := 2004]
+LA_2019_avg[, year := 2019]
+LA_combined <- rbind(LA_2004_avg, LA_2019_avg)
+```
+Here we can see the average PM2.5 concentrations and AQI values per site in LA for each year
+```{r}
+unique(LA_2004_avg, by = "Site Name")
+unique(LA_2019_avg, by = "Site Name")
+```
+Here is a line plot showing the average PM2.5 Concentrations per site in Los Angeles for 2004 and 2019. Of the sites for which there is data from both years, the average PM2.5 concentration has decreased. The Lebec and Lancaster-Division Street sites have the smallest amount of change in average PM2.5 concentration.
+```{r}
+ggplot(LA_combined) +
+  geom_point(mapping=aes(x=year, y = PM2.5, group=`Site Name`, color=`Site Name`)) +
+  geom_line(mapping=aes(x=year, y = PM2.5, group=`Site Name`, color=`Site Name`)) +
+  labs(title = "LA County-wide PM2.5 Concentrations", x  = "Year", y = "Average PM2.5 Concentration")
+```
+
