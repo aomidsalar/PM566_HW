@@ -6,6 +6,8 @@ output:
   html_document:
     toc: yes
     toc_float: yes
+  github_document:
+    html_preview: false
 ---
 
 ```{r setup, include=FALSE}
@@ -33,12 +35,12 @@ dim(data2004)
 dim(data2019)
 ```
 #### Checking headers and footers of `data2004`
-```{r, cache=TRUE}
+```{r check data2004, cache=TRUE}
 head(data2004)
 tail(data2004)
 ```
 #### Checking headers and footers of `data2019`
-```{r, cache=TRUE}
+```{r check data2019, cache=TRUE}
 head(data2019)
 tail(data2019)
 ```
@@ -150,12 +152,12 @@ county_2019[, year := 2019]
 county_combined <- rbind(county_2004, county_2019)
 ```
 Here, the average PM2.5 concentrations can be visualized for each county per year.
-```{r}
+```{r county-unique}
 unique(county_2004, by = "COUNTY")
 unique(county_2019, by = "COUNTY")
 ```
 This line plot shows the average PM2.5 concentration by County in 2004 and 2019. Most of the counties' average PM2.5 concentrations have decreased, as seen by the negative slope.
-```{r line plot}
+```{r line plot - county}
 ggplot(county_combined) +
   geom_point(mapping=aes(x=year, y = PM2.5, group=COUNTY, color=COUNTY)) +
   geom_line(mapping=aes(x=year, y = PM2.5, group=COUNTY, color=COUNTY)) +
@@ -179,12 +181,12 @@ LA_2019_avg[, year := 2019]
 LA_combined <- rbind(LA_2004_avg, LA_2019_avg)
 ```
 Here we can see the average PM2.5 concentrations and AQI values per site in LA for each year
-```{r}
+```{r LA unique}
 unique(LA_2004_avg, by = "Site Name")
 unique(LA_2019_avg, by = "Site Name")
 ```
 Here is a line plot showing the average PM2.5 Concentrations per site in Los Angeles for 2004 and 2019. Of the sites for which there is data from both years, the average PM2.5 concentration has decreased. The Lebec and Lancaster-Division Street sites have the smallest amount of change in average PM2.5 concentration.
-```{r}
+```{r LA lineplot}
 ggplot(LA_combined) +
   geom_point(mapping=aes(x=year, y = PM2.5, group=`Site Name`, color=`Site Name`)) +
   geom_line(mapping=aes(x=year, y = PM2.5, group=`Site Name`, color=`Site Name`)) +
