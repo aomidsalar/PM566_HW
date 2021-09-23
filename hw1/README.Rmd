@@ -7,7 +7,6 @@ output:
     toc: yes
     toc_float: yes
     keep_md: yes
-  github_document
 ---
 
 ```{r setup, include=FALSE}
