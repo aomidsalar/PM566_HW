@@ -8,8 +8,8 @@ output:
     toc_float: yes
     keep_md: yes
   github_document:
-    keep_html: false
-    html_preview: false
+    keep_html: true
+  always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
