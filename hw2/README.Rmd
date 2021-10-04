@@ -115,4 +115,32 @@ merged[, .(
   prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
   by = "townname"] %>% knitr::kable(caption = "FEV by Town")
 ```
+```{r fev - sex}
+##By Sex
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = "male"] %>% knitr::kable(caption = "FEV by Sex")
+```
+```{r fev - obesity level}
+##By Obesity Level
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = "obesity_level"] %>% knitr::kable(caption = "FEV by Obesity Level")
+```
+```{r fev - smokegas}
+##By Town
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = "smoke_gas_exposure"] %>% knitr::kable(caption = "FEV by Smoke & Gas Exposure")
+
+```
 

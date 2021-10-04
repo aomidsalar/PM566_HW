@@ -605,6 +605,146 @@ merged[, .(
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>##By Sex
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = &quot;male&quot;] %&gt;% knitr::kable(caption = &quot;FEV by Sex&quot;)</code></pre>
+<table>
+<caption>FEV by Sex</caption>
+<thead>
+<tr class="header">
+<th align="right">male</th>
+<th align="right">fev_avg</th>
+<th align="right">fev_sd</th>
+<th align="right">prop_asthma</th>
+<th align="right">prop_noasthma</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">1958.911</td>
+<td align="right">311.9181</td>
+<td align="right">0.1180328</td>
+<td align="right">0.8590164</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="right">2103.787</td>
+<td align="right">307.5123</td>
+<td align="right">0.1677966</td>
+<td align="right">0.8033898</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>##By Obesity Level
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = &quot;obesity_level&quot;] %&gt;% knitr::kable(caption = &quot;FEV by Obesity Level&quot;)</code></pre>
+<table>
+<caption>FEV by Obesity Level</caption>
+<thead>
+<tr class="header">
+<th align="left">obesity_level</th>
+<th align="right">fev_avg</th>
+<th align="right">fev_sd</th>
+<th align="right">prop_asthma</th>
+<th align="right">prop_noasthma</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">normal</td>
+<td align="right">1999.794</td>
+<td align="right">295.1964</td>
+<td align="right">0.1364103</td>
+<td align="right">0.8369231</td>
+</tr>
+<tr class="even">
+<td align="left">overweight</td>
+<td align="right">2224.322</td>
+<td align="right">317.4261</td>
+<td align="right">0.1609195</td>
+<td align="right">0.8160920</td>
+</tr>
+<tr class="odd">
+<td align="left">obese</td>
+<td align="right">2266.154</td>
+<td align="right">325.4710</td>
+<td align="right">0.2038835</td>
+<td align="right">0.7669903</td>
+</tr>
+<tr class="even">
+<td align="left">underweight</td>
+<td align="right">1698.327</td>
+<td align="right">303.3983</td>
+<td align="right">0.0857143</td>
+<td align="right">0.9142857</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>##By Town
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = &quot;smoke_gas_exposure&quot;] %&gt;% knitr::kable(caption = &quot;FEV by Smoke &amp; Gas Exposure&quot;)</code></pre>
+<table>
+<caption>FEV by Smoke &amp; Gas Exposure</caption>
+<thead>
+<tr class="header">
+<th align="left">smoke_gas_exposure</th>
+<th align="right">fev_avg</th>
+<th align="right">fev_sd</th>
+<th align="right">prop_asthma</th>
+<th align="right">prop_noasthma</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">no_exposure</td>
+<td align="right">2055.356</td>
+<td align="right">330.4169</td>
+<td align="right">0.1448598</td>
+<td align="right">0.8364486</td>
+</tr>
+<tr class="even">
+<td align="left">NA</td>
+<td align="right">2001.878</td>
+<td align="right">340.2592</td>
+<td align="right">0.1166667</td>
+<td align="right">0.6666667</td>
+</tr>
+<tr class="odd">
+<td align="left">smoke_exposure</td>
+<td align="right">2055.714</td>
+<td align="right">295.6475</td>
+<td align="right">0.1666667</td>
+<td align="right">0.8055556</td>
+</tr>
+<tr class="even">
+<td align="left">gas_exposure</td>
+<td align="right">2025.989</td>
+<td align="right">317.6305</td>
+<td align="right">0.1461434</td>
+<td align="right">0.8430311</td>
+</tr>
+<tr class="odd">
+<td align="left">smoke_and_gas_exposure</td>
+<td align="right">2019.867</td>
+<td align="right">298.9728</td>
+<td align="right">0.1258278</td>
+<td align="right">0.8410596</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 
