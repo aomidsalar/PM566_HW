@@ -53,7 +53,7 @@ merged <- merge(
 ```
 
 ### Check number of rows
-```{r}
+```{r nrows}
 dim(individual)
 dim(regional)
 dim(merged)
@@ -61,13 +61,13 @@ dim(merged)
 The `merged` dataset has 1200 rows, which is the same as the `individual` dataset.
 
 ### Looking at the `merged` dataset more closely
-```{r}
+```{r summary}
 summary(merged)
 ```
 
 ### Imputing missing variables
 Some of the variables that will be used later have NA values. These will be replaced by the averages within the `hispanic` and `male` variables
-```{r}
+```{r imputing}
 merged[, bmi := fcoalesce(bmi, mean(bmi, na.rm = TRUE)),
     by = .(male, hispanic)]
 merged[, fev := fcoalesce(fev, mean(fev, na.rm = TRUE)),
@@ -79,7 +79,7 @@ merged[, fev := fcoalesce(fev, mean(fev, na.rm = TRUE)),
 ```
 
 ### Creating new variable `obesity_level` 
-```{r}
+```{r obesity-level}
 merged[, obesity_level := fifelse(bmi < 14, "underweight",
                                   fifelse(bmi < 22, "normal",
                                         fifelse(bmi < 24, "overweight", "obese")))] 
@@ -90,5 +90,29 @@ bmi_summary <- merged[, .(
   N_obs   = .N),
   by = "obesity_level"]
 knitr::kable(bmi_summary)
+```
+
+### Creating new variable `smoke_gas_exposure`
+```{r smoke-gas}
+merged[, smoke_gas_exposure := fifelse(smoke == 0 & gasstove == 0, "no_exposure",
+                                  fifelse(smoke == 0 & gasstove == 1, "gas_exposure",
+                                        fifelse(smoke == 1 & gasstove == 0, "smoke_exposure",
+                                                fifelse(smoke == 1 & gasstove == 1, "smoke_and_gas_exposure", "NA"))))] 
+##Summary Table
+smoke_gas_exposure_summary <- merged[, .(
+  N_obs = .N),
+  by = "smoke_gas_exposure"]
+knitr::kable(smoke_gas_exposure_summary)
+```
+
+### Summary tables of Forced Expiratory Volume
+```{r fev - town}
+##By Town
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = "townname"] %>% knitr::kable(caption = "FEV by Town")
 ```
 

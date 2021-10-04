@@ -75,6 +75,7 @@ dim(merged)
 ## [1] 1200   49
 ```
 The `merged` dataset has 1200 rows, which is the same as the `individual` dataset.
+
 ### Looking at the `merged` dataset more closely
 
 ```r
@@ -225,4 +226,59 @@ knitr::kable(bmi_summary)
 |overweight    | 22.02353| 23.99650|    87|
 |obese         | 24.00647| 41.26613|   103|
 |underweight   | 11.29640| 13.98601|    35|
+
+### Creating new variable `smoke_gas_exposure`
+
+```r
+merged[, smoke_gas_exposure := fifelse(smoke == 0 & gasstove == 0, "no_exposure",
+                                  fifelse(smoke == 0 & gasstove == 1, "gas_exposure",
+                                        fifelse(smoke == 1 & gasstove == 0, "smoke_exposure",
+                                                fifelse(smoke == 1 & gasstove == 1, "smoke_and_gas_exposure", "NA"))))] 
+##Summary Table
+smoke_gas_exposure_summary <- merged[, .(
+  N_obs = .N),
+  by = "smoke_gas_exposure"]
+knitr::kable(smoke_gas_exposure_summary)
+```
+
+
+
+|smoke_gas_exposure     | N_obs|
+|:----------------------|-----:|
+|no_exposure            |   214|
+|NA                     |    60|
+|smoke_exposure         |    36|
+|gas_exposure           |   739|
+|smoke_and_gas_exposure |   151|
+
+### Summary tables of Forced Expiratory Volume
+
+```r
+##By Town
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = "townname"] %>% knitr::kable(caption = "FEV by Town")
+```
+
+
+
+Table: FEV by Town
+
+|townname      |  fev_avg|   fev_sd| prop_asthma| prop_noasthma|
+|:-------------|--------:|--------:|-----------:|-------------:|
+|Alpine        | 2087.101| 291.1768|        0.11|          0.86|
+|Atascadero    | 2075.897| 324.0935|        0.25|          0.73|
+|Lake Elsinore | 2038.849| 303.6956|        0.12|          0.83|
+|Lake Gregory  | 2084.700| 319.9593|        0.15|          0.84|
+|Lancaster     | 2003.044| 317.1298|        0.16|          0.81|
+|Lompoc        | 2034.354| 351.0454|        0.11|          0.86|
+|Long Beach    | 1985.861| 319.4625|        0.13|          0.83|
+|Mira Loma     | 1985.202| 324.9634|        0.15|          0.80|
+|Riverside     | 1989.881| 277.5065|        0.11|          0.89|
+|San Dimas     | 2026.794| 318.7845|        0.17|          0.82|
+|Santa Maria   | 2025.750| 312.1725|        0.13|          0.84|
+|Upland        | 2024.266| 343.1637|        0.12|          0.87|
 

@@ -285,7 +285,10 @@ regional &lt;- data.table::fread(&quot;chs_regional.csv&quot;)</code></pre>
 <pre><code>## [1] 12 27</code></pre>
 <pre class="r"><code>dim(merged)</code></pre>
 <pre><code>## [1] 1200   49</code></pre>
-<p>The <code>merged</code> dataset has 1200 rows, which is the same as the <code>individual</code> dataset. ### Looking at the <code>merged</code> dataset more closely</p>
+<p>The <code>merged</code> dataset has 1200 rows, which is the same as the <code>individual</code> dataset.</p>
+</div>
+<div id="looking-at-the-merged-dataset-more-closely" class="section level3">
+<h3>Looking at the <code>merged</code> dataset more closely</h3>
 <pre class="r"><code>summary(merged)</code></pre>
 <pre><code>##    townname              sid              male            race          
 ##  Length:1200        Min.   :   1.0   Min.   :0.0000   Length:1200       
@@ -449,6 +452,156 @@ knitr::kable(bmi_summary)</code></pre>
 <td align="right">11.29640</td>
 <td align="right">13.98601</td>
 <td align="right">35</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="creating-new-variable-smoke_gas_exposure" class="section level3">
+<h3>Creating new variable <code>smoke_gas_exposure</code></h3>
+<pre class="r"><code>merged[, smoke_gas_exposure := fifelse(smoke == 0 &amp; gasstove == 0, &quot;no_exposure&quot;,
+                                  fifelse(smoke == 0 &amp; gasstove == 1, &quot;gas_exposure&quot;,
+                                        fifelse(smoke == 1 &amp; gasstove == 0, &quot;smoke_exposure&quot;,
+                                                fifelse(smoke == 1 &amp; gasstove == 1, &quot;smoke_and_gas_exposure&quot;, &quot;NA&quot;))))] 
+##Summary Table
+smoke_gas_exposure_summary &lt;- merged[, .(
+  N_obs = .N),
+  by = &quot;smoke_gas_exposure&quot;]
+knitr::kable(smoke_gas_exposure_summary)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">smoke_gas_exposure</th>
+<th align="right">N_obs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">no_exposure</td>
+<td align="right">214</td>
+</tr>
+<tr class="even">
+<td align="left">NA</td>
+<td align="right">60</td>
+</tr>
+<tr class="odd">
+<td align="left">smoke_exposure</td>
+<td align="right">36</td>
+</tr>
+<tr class="even">
+<td align="left">gas_exposure</td>
+<td align="right">739</td>
+</tr>
+<tr class="odd">
+<td align="left">smoke_and_gas_exposure</td>
+<td align="right">151</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="summary-tables-of-forced-expiratory-volume" class="section level3">
+<h3>Summary tables of Forced Expiratory Volume</h3>
+<pre class="r"><code>##By Town
+merged[, .(
+  fev_avg = mean(fev, na.rm = TRUE),
+  fev_sd  = sd(fev, na.rm = TRUE),
+  prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
+  prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
+  by = &quot;townname&quot;] %&gt;% knitr::kable(caption = &quot;FEV by Town&quot;)</code></pre>
+<table>
+<caption>FEV by Town</caption>
+<thead>
+<tr class="header">
+<th align="left">townname</th>
+<th align="right">fev_avg</th>
+<th align="right">fev_sd</th>
+<th align="right">prop_asthma</th>
+<th align="right">prop_noasthma</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Alpine</td>
+<td align="right">2087.101</td>
+<td align="right">291.1768</td>
+<td align="right">0.11</td>
+<td align="right">0.86</td>
+</tr>
+<tr class="even">
+<td align="left">Atascadero</td>
+<td align="right">2075.897</td>
+<td align="right">324.0935</td>
+<td align="right">0.25</td>
+<td align="right">0.73</td>
+</tr>
+<tr class="odd">
+<td align="left">Lake Elsinore</td>
+<td align="right">2038.849</td>
+<td align="right">303.6956</td>
+<td align="right">0.12</td>
+<td align="right">0.83</td>
+</tr>
+<tr class="even">
+<td align="left">Lake Gregory</td>
+<td align="right">2084.700</td>
+<td align="right">319.9593</td>
+<td align="right">0.15</td>
+<td align="right">0.84</td>
+</tr>
+<tr class="odd">
+<td align="left">Lancaster</td>
+<td align="right">2003.044</td>
+<td align="right">317.1298</td>
+<td align="right">0.16</td>
+<td align="right">0.81</td>
+</tr>
+<tr class="even">
+<td align="left">Lompoc</td>
+<td align="right">2034.354</td>
+<td align="right">351.0454</td>
+<td align="right">0.11</td>
+<td align="right">0.86</td>
+</tr>
+<tr class="odd">
+<td align="left">Long Beach</td>
+<td align="right">1985.861</td>
+<td align="right">319.4625</td>
+<td align="right">0.13</td>
+<td align="right">0.83</td>
+</tr>
+<tr class="even">
+<td align="left">Mira Loma</td>
+<td align="right">1985.202</td>
+<td align="right">324.9634</td>
+<td align="right">0.15</td>
+<td align="right">0.80</td>
+</tr>
+<tr class="odd">
+<td align="left">Riverside</td>
+<td align="right">1989.881</td>
+<td align="right">277.5065</td>
+<td align="right">0.11</td>
+<td align="right">0.89</td>
+</tr>
+<tr class="even">
+<td align="left">San Dimas</td>
+<td align="right">2026.794</td>
+<td align="right">318.7845</td>
+<td align="right">0.17</td>
+<td align="right">0.82</td>
+</tr>
+<tr class="odd">
+<td align="left">Santa Maria</td>
+<td align="right">2025.750</td>
+<td align="right">312.1725</td>
+<td align="right">0.13</td>
+<td align="right">0.84</td>
+</tr>
+<tr class="even">
+<td align="left">Upland</td>
+<td align="right">2024.266</td>
+<td align="right">343.1637</td>
+<td align="right">0.12</td>
+<td align="right">0.87</td>
 </tr>
 </tbody>
 </table>
