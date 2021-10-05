@@ -197,10 +197,9 @@ merged[, bmi := fcoalesce(bmi, mean(bmi, na.rm = TRUE)),
     by = .(male, hispanic)]
 merged[, fev := fcoalesce(fev, mean(fev, na.rm = TRUE)),
     by = .(male, hispanic)]
-#merged[, smoke := fcoalesce(smoke, mean(smoke, na.rm = TRUE)),
-#       by = .(male, hispanic)]
-#merged[, gasstove := fcoalesce(gasstove, mean(gasstove, na.rm = TRUE)),
-#       by = .(male, hispanic)]
+##keeping binary variables(smoke, gasstove), as it doesn't make sense to impute those
+##adding male_ch variable to convert 0 to female and 1 to male
+merged[, male_ch := fifelse(male == 0, "female", "male")]
 ```
 
 ### Creating new variable `obesity_level` 
@@ -289,17 +288,17 @@ merged[, .(
   fev_sd  = sd(fev, na.rm = TRUE),
   prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
   prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
-  by = "male"] %>% knitr::kable(caption = "FEV by Sex")
+  by = "male_ch"] %>% knitr::kable(caption = "FEV by Sex")
 ```
 
 
 
 Table: FEV by Sex
 
-| male|  fev_avg|   fev_sd| prop_asthma| prop_noasthma|
-|----:|--------:|--------:|-----------:|-------------:|
-|    0| 1958.911| 311.9181|   0.1180328|     0.8590164|
-|    1| 2103.787| 307.5123|   0.1677966|     0.8033898|
+|male_ch |  fev_avg|   fev_sd| prop_asthma| prop_noasthma|
+|:-------|--------:|--------:|-----------:|-------------:|
+|female  | 1958.911| 311.9181|   0.1180328|     0.8590164|
+|male    | 2103.787| 307.5123|   0.1677966|     0.8033898|
 
 ```r
 ##By Obesity Level
@@ -343,4 +342,25 @@ Table: FEV by Smoke & Gas Exposure
 |smoke_exposure         | 2055.714| 295.6475|   0.1666667|     0.8055556|
 |gas_exposure           | 2025.989| 317.6305|   0.1461434|     0.8430311|
 |smoke_and_gas_exposure | 2019.867| 298.9728|   0.1258278|     0.8410596|
+
+## Looking at the Data
+The primary questions of interest are: 1. What is the association between BMI and FEV (forced expiratory volume)? 2. What is the association between smoke and gas exposure and FEV? 3. What is the association between PM2.5 exposure and FEV?
+
+### Question 1
+#### Facet plot showing scatterplots with regression lines of BMI vs FEV by “townname”.
+
+```r
+ggplot(data = merged, mapping = aes(x = bmi, y = fev)) +
+  geom_point(mapping = aes(color = townname), show.legend = FALSE) +
+  geom_smooth(method = lm, se = FALSE) +
+  facet_wrap( ~ townname) +
+  labs(title = "FEV and BMI by Town", y = "Forced Expiratory Volume (FEV) in One Second (mL)", x = "Body Mass Index (BMI)")
+```
+
+```
+## `geom_smooth()` using formula 'y ~ x'
+```
+
+![](README_files/figure-html/geom_facet-1.png)<!-- -->
+
 

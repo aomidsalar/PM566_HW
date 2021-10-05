@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library('data.table')
 library('dtplyr')
 library('dplyr')
+library('leaflet')
+library('ggplot2')
 ```
 
 ## Download Data
@@ -72,10 +74,9 @@ merged[, bmi := fcoalesce(bmi, mean(bmi, na.rm = TRUE)),
     by = .(male, hispanic)]
 merged[, fev := fcoalesce(fev, mean(fev, na.rm = TRUE)),
     by = .(male, hispanic)]
-#merged[, smoke := fcoalesce(smoke, mean(smoke, na.rm = TRUE)),
-#       by = .(male, hispanic)]
-#merged[, gasstove := fcoalesce(gasstove, mean(gasstove, na.rm = TRUE)),
-#       by = .(male, hispanic)]
+##keeping binary variables(smoke, gasstove), as it doesn't make sense to impute those
+##adding male_ch variable to convert 0 to female and 1 to male
+merged[, male_ch := fifelse(male == 0, "female", "male")]
 ```
 
 ### Creating new variable `obesity_level` 
@@ -122,7 +123,7 @@ merged[, .(
   fev_sd  = sd(fev, na.rm = TRUE),
   prop_asthma = sum(asthma == 1, na.rm = TRUE)/.N,
   prop_noasthma = sum(asthma == 0, na.rm = TRUE)/.N),
-  by = "male"] %>% knitr::kable(caption = "FEV by Sex")
+  by = "male_ch"] %>% knitr::kable(caption = "FEV by Sex")
 ```
 ```{r fev - obesity level}
 ##By Obesity Level
@@ -143,4 +144,18 @@ merged[, .(
   by = "smoke_gas_exposure"] %>% knitr::kable(caption = "FEV by Smoke & Gas Exposure")
 
 ```
+
+## Looking at the Data
+The primary questions of interest are: 1. What is the association between BMI and FEV (forced expiratory volume)? 2. What is the association between smoke and gas exposure and FEV? 3. What is the association between PM2.5 exposure and FEV?
+
+### Question 1
+#### Facet plot showing scatterplots with regression lines of BMI vs FEV by “townname”.
+```{r geom_facet}
+ggplot(data = merged, mapping = aes(x = bmi, y = fev)) +
+  geom_point(mapping = aes(color = townname), show.legend = FALSE) +
+  geom_smooth(method = lm, se = FALSE) +
+  facet_wrap( ~ townname) +
+  labs(title = "FEV and BMI by Town", y = "Forced Expiratory Volume (FEV) in One Second (mL)", x = "Body Mass Index (BMI)")
+```
+
 
