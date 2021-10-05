@@ -385,3 +385,18 @@ merged[!is.na(smoke_gas_exposure)] %>%
 
 ![](README_files/figure-html/hist-fev-smokegas-1.png)<!-- -->
 
+### Question 3
+#### Barchart of BMI by smoke/gas exposure.
+
+```r
+merged[!is.na(smoke_gas_exposure)] %>%
+  ggplot(mapping = aes(x = obesity_level, fill = smoke_gas_exposure)) +
+  geom_bar(position = 'dodge', color = 'black') +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Bar Plot of BMI Category by Smoke/Gas Exposure", x = "BMI Category", y = "Count")
+```
+
+![](README_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
+
+
+
