@@ -158,4 +158,19 @@ ggplot(data = merged, mapping = aes(x = bmi, y = fev)) +
   labs(title = "FEV and BMI by Town", y = "Forced Expiratory Volume (FEV) in One Second (mL)", x = "Body Mass Index (BMI)")
 ```
 
+### Question 2
+#### Stacked histograms of FEV by BMI category and FEV by smoke/gas exposure. Use different color schemes than the ggplot default.
+```{r hist-fev-bmi}
+ggplot(data = merged, mapping=aes(x = fev,fill = obesity_level)) +
+  geom_histogram(binwidth = 50, color = 'black') +
+  scale_fill_brewer(palette = 'Set2') +
+  labs(title = "Histogram of FEV by BMI Category", x = "FEV", y = "Frequency")
+```
+```{r hist-fev-smokegas}
+merged[!is.na(smoke_gas_exposure)] %>%
+  ggplot(mapping=aes(x = fev,fill = smoke_gas_exposure)) +
+  geom_histogram(binwidth = 50, color = 'black') +
+  scale_fill_brewer(palette = 'Set2') +
+  labs(title = "Histogram of FEV by Smoke/Gas Exposure Category", x = "FEV", y = "Frequency")
+```
 

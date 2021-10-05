@@ -363,4 +363,25 @@ ggplot(data = merged, mapping = aes(x = bmi, y = fev)) +
 
 ![](README_files/figure-html/geom_facet-1.png)<!-- -->
 
+### Question 2
+#### Stacked histograms of FEV by BMI category and FEV by smoke/gas exposure. Use different color schemes than the ggplot default.
+
+```r
+ggplot(data = merged, mapping=aes(x = fev,fill = obesity_level)) +
+  geom_histogram(binwidth = 50, color = 'black') +
+  scale_fill_brewer(palette = 'Set2') +
+  labs(title = "Histogram of FEV by BMI Category", x = "FEV", y = "Frequency")
+```
+
+![](README_files/figure-html/hist-fev-bmi-1.png)<!-- -->
+
+```r
+merged[!is.na(smoke_gas_exposure)] %>%
+  ggplot(mapping=aes(x = fev,fill = smoke_gas_exposure)) +
+  geom_histogram(binwidth = 50, color = 'black') +
+  scale_fill_brewer(palette = 'Set2') +
+  labs(title = "Histogram of FEV by Smoke/Gas Exposure Category", x = "FEV", y = "Frequency")
+```
+
+![](README_files/figure-html/hist-fev-smokegas-1.png)<!-- -->
 
