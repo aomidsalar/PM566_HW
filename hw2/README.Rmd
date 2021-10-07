@@ -218,7 +218,7 @@ merged %>%
   ggplot(mapping = aes(x = obesity_level, y = fev)) +
   stat_summary(fun = median, fun.min = min, fun.max = max, geom = "errorbar") +
   stat_summary(fun = median) +
-  labs(title = "Statistical summary (Mean +- 2SD) of FEV by Obesity Level", x = "Obesity Level", y = "FEV")
+  labs(title = "Statistical summary of FEV by Obesity Level", x = "Obesity Level", y = "FEV")
 ```
 Median FEV seems to stay relatively consistent among the four different smoke/gas exposure groups, so these two variables do not seem to be associated.
 
@@ -227,7 +227,7 @@ merged[!is.na(smoke_gas_exposure)] %>%
   ggplot(mapping = aes(x = smoke_gas_exposure, y = fev)) +
   stat_summary(fun = median, fun.min = min, fun.max = max, geom = "errorbar") +
   stat_summary(fun = median) +
-  labs(title = "Statistical summary (Mean +- 2SD) of FEV by Smoke/Gas Exposure", x = "Smoke/Gas Exposure", y = "FEV")
+  labs(title = "Statistical summary of FEV by Smoke/Gas Exposure", x = "Smoke/Gas Exposure", y = "FEV")
 
 ```
 
