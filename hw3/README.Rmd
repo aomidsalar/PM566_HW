@@ -22,6 +22,7 @@ library('tidyr')
 library('httr')
 library('xml2')
 library('stringr')
+library('ggplot2')
 ```
 
 # Part 1: APIs
@@ -83,7 +84,7 @@ publications <- httr::content(publications)
 publications_txt <- as.character(publications)
 ```
 
-```{r}
+```{r extracting}
 # publication list
 pub_char_list <- xml2::xml_children(publications)
 pub_char_list <- sapply(pub_char_list, as.character)
@@ -102,10 +103,11 @@ journalname <- str_replace_all(journalname, "\\s+", " ")
 pubdate <- str_extract(pub_char_list, "<PubDate>(\\n|.)+</PubDate>")
 pubdate <- str_remove_all(pubdate, "</?[[:alnum:]]+>")
 pubdate <- str_replace_all(pubdate, "\\s+", " ")
+##how many missing abstracts are there?
 table(is.na(abstracts))
 ```
 
-```{r}
+```{r database}
 database <- data.frame(
   PubMedId = ids,
   Title = titles,
@@ -115,4 +117,96 @@ database <- data.frame(
 )
 knitr::kable(database[1:10,], caption = "Some Papers on PubMed about SARS-CoV2 Trial Vaccines")
 ```
+
+# Text Mining
+
+```{r download, cache = TRUE}
+input <- fread("https://github.com/USCbiostats/data-science-data/raw/master/03_pubmed/pubmed.csv")
+```
+
+## Part 1
+### Tokenizing abstracts & plotting top 20 words
+The majority of these top 20 words are stopwords. The words that stand out to me here are *covid*, *19*, *patients*, *cancer*, and *prostate*.
+
+```{r}
+input <- as_tibble(input)
+input %>% unnest_tokens(token, abstract) %>% count(token, sort = TRUE) %>% top_n(20, n) %>% ggplot(aes(x = n, y = fct_reorder(token, n ))) + 
+    geom_col(fill = 'lightslateblue') +
+    labs(title = "Top 20 Most Frequent Words in Abstracts", y = "", x = "frequency")
+```
+
+### Let's take out stopwords and see how the list changes.
+
+The list of tokens has now changed -- the five most common stopwords now are *covid*, *19*, *patients*, *cancer*, and *prostate*. These words showed up on the previous list, but the other tokens in this list did not.
+
+```{r remove-stopwords}
+input %>%
+  unnest_tokens(token, abstract) %>%
+  count(token, sort = TRUE) %>% 
+  anti_join(stop_words, by = c("token" = "word")) %>% 
+  top_n(20, n) %>% ggplot(aes(x = n, y = fct_reorder(token, n ))) + 
+    geom_col(fill = 'lightslateblue') +
+    labs(title = "Top 20 Most Frequent Words in Abstracts, without Stopwords", y = "", x = "frequency")
+```
+
+#### Let's group the the 5 most frequent tokens per search term
+
+The corresponding tokens per search term are not surprising to me, as they are closely related. One thing that I thought was interesting was that *women* appeared as a top token for the search term *preeclampsia*, but *men* was not in the top 5 tokens for the search term *prostate cancer*.
+
+```{r groupby}
+input %>%
+  unnest_tokens(token, abstract) %>%
+  anti_join(stop_words, by = c("token" = "word")) %>% 
+  group_by(term)%>%
+  count(token)%>%
+  top_n(5, n) %>% knitr::kable(caption = "5 Most Common Tokens for each Search Term, After Removing Stopwords")
+```
+
+## Part 2
+### Top 10 Bi-grams
+These top bi-grams include some common stop word phrases (*of the*, *in the*, *and the*, *to the*), as well as some that relate to the healthcare field and include the top tokens that were seen above (*covid 19*, *prostate cancer*, *pre eclampsia*). Let's take out stop words and see how this list changes.
+
+```{r bigrams}
+input %>% unnest_ngrams(ngram, abstract, n = 2) %>% 
+  count(ngram, sort = TRUE) %>%
+  top_n(10, n) %>%
+  ggplot(aes(x = n, y = fct_reorder(ngram, n))) +
+  geom_col(fill = 'lightslateblue') +
+  labs(title = "Top 10 Bi-grams, with Stopwords", y = "", x = "frequency")
+```
+
+### Top 10 Bigrams, without Stopwords
+
+After removing stopwords, these top 10 bigrams are now specific to the search terms that were shown above (*covid 19*, *prostate cancer*, *pre eclampsia*, *cystic fibrosis*). There is one search term missing: *meningitis*. Most of the top 10 is populated by bigrams related to covid 19. The *95 ci* bigram is interesting, and makes sense to me given these are research publications, so I would expect statistics to have been used for most of these studies. 
+
+```{r bigrams-nostopwords}
+bigrams <- input %>%
+  unnest_ngrams(ngram, abstract, n = 2) %>% 
+  separate(col=ngram, into=c("word1", "word2"), sep = " ") %>%
+  select(word1, word2) %>%
+  anti_join(stop_words, by = c("word1" = "word")) %>%
+  anti_join(stop_words, by = c("word2" = "word")) %>%
+  count(word1, word2, sort=TRUE) %>%
+  top_n(10, n)
+unite(bigrams, "ngram", c("word1", "word2"), sep = " ") %>%
+  ggplot(aes(x = n, y = fct_reorder(ngram, n))) +
+  geom_col(fill = 'lightslateblue') +
+  labs(title = "Top 10 Bi-grams, without Stopwords", y = "", x = "frequency")
+```
+
+## Part 3
+### TF-IDF (Term Frequency * Inverse Document Frequency) for Search Term 
+Compared to the previous table from question 1, the terms with the highest TF-IDF values are different, and arguably more interesting. For example, the terms with the highest TF-IDF for the search term *prostate cancer* are *prostate*, *androgen*, *psa*, *prostatectomy*, and *castration*. Some of these words (*prostate*) appear on the previous list and are more generalized to the search term, whereas the others (*androgen*, *psa*, *prostatectomy*, *castration*) are unique to this list, and provide a little more detail.
+
+```{r}
+input %>%
+  unnest_tokens(token, abstract) %>%
+  count(token, term) %>%
+  bind_tf_idf(token, term, n) %>%
+  group_by(term) %>%
+  top_n(5, tf_idf) %>%
+  arrange(desc(tf_idf)) %>%
+  select(term, token, n, tf_idf) %>% knitr::kable(caption="5 Tokens from each Search Term with Highest TF-IDF Value")
+```
+
 
