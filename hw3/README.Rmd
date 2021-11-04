@@ -25,7 +25,7 @@ library('stringr')
 library('ggplot2')
 ```
 
-# Part 1: APIs
+# APIs
 
 ### Look for papers that show up under the term *sars-cov-2 trial vaccine*
 
@@ -44,6 +44,7 @@ numberpapers  <- stringr::str_extract(counts, "[:digit:]+.*[:digit:]")
 ```
 
 There are `r numberpapers` papers with the search term *sars-cov-2 trial vaccine*
+
 ### Download each paper's abstracts
 
 ```{r query}
@@ -92,15 +93,18 @@ pub_char_list <- sapply(pub_char_list, as.character)
 titles <- str_extract(pub_char_list, "<ArticleTitle>[[:print:][:space:]]+</ArticleTitle>")
 titles <- str_remove_all(titles, "</?[[:alnum:]-=\"]+>")
 # extracting abstracts
-abstracts <- str_extract(pub_char_list, "<Abstract>(\\n|.)+</Abstract>")
+abstracts <- str_extract(pub_char_list, "<Abstract>[[:print:][:space:]]+</Abstract>")
+#abstracts <- str_extract(pub_char_list, "<Abstract>(\\n|.)+</Abstract>")
 abstracts <- str_remove_all(abstracts, "</?[[:alnum:]]+>")
 abstracts <- str_replace_all(abstracts, "\\s+", " ")
 # extracting journal name
-journalname <- str_extract(pub_char_list, "<Title>(\\n|.)+</Title>")
+journalname <- str_extract(pub_char_list, "<Title>[[:print:][:space:]]+</Title>")
+#journalname <- str_extract(pub_char_list, "<Title>(\\n|.)+</Title>")
 journalname <- str_remove_all(journalname, "</?[[:alnum:]]+>")
 journalname <- str_replace_all(journalname, "\\s+", " ")
 # extracting publication date
-pubdate <- str_extract(pub_char_list, "<PubDate>(\\n|.)+</PubDate>")
+pubdate <- str_extract(pub_char_list, "<PubDate>[[:print:][:space:]]+</PubDate>")
+#pubdate <- str_extract(pub_char_list, "<PubDate>(\\n|.)+</PubDate>")
 pubdate <- str_remove_all(pubdate, "</?[[:alnum:]]+>")
 pubdate <- str_replace_all(pubdate, "\\s+", " ")
 ##how many missing abstracts are there?
@@ -125,6 +129,7 @@ input <- fread("https://github.com/USCbiostats/data-science-data/raw/master/03_p
 ```
 
 ## Part 1
+
 ### Tokenizing abstracts & plotting top 20 words
 The majority of these top 20 words are stopwords. The words that stand out to me here are *covid*, *19*, *patients*, *cancer*, and *prostate*.
 
@@ -137,7 +142,7 @@ input %>% unnest_tokens(token, abstract) %>% count(token, sort = TRUE) %>% top_n
 
 ### Let's take out stopwords and see how the list changes.
 
-The list of tokens has now changed -- the five most common stopwords now are *covid*, *19*, *patients*, *cancer*, and *prostate*. These words showed up on the previous list, but the other tokens in this list did not.
+The list of tokens has now changed -- the five most common stopwords now are *covid*, *19*, *patients*, *cancer*, and *prostate*. These words showed up on the previous list, but the other tokens in this list did not. *Covid* and *19* have similar frequencies, likely because they were commonly used together.
 
 ```{r remove-stopwords}
 input %>%
@@ -163,8 +168,10 @@ input %>%
 ```
 
 ## Part 2
-### Top 10 Bi-grams
-These top bi-grams include some common stop word phrases (*of the*, *in the*, *and the*, *to the*), as well as some that relate to the healthcare field and include the top tokens that were seen above (*covid 19*, *prostate cancer*, *pre eclampsia*). Let's take out stop words and see how this list changes.
+
+### Top 10 Bi-grams with Stopwords
+
+These top bi-grams include some common stop word phrases (*of the*, *in the*, *and the*, *to the*), as well as some that relate to the healthcare field and include the top tokens that were seen above (*covid 19*, *prostate cancer*, *pre eclampsia*). 
 
 ```{r bigrams}
 input %>% unnest_ngrams(ngram, abstract, n = 2) %>% 
@@ -195,8 +202,22 @@ unite(bigrams, "ngram", c("word1", "word2"), sep = " ") %>%
 ```
 
 ## Part 3
+
 ### TF-IDF (Term Frequency * Inverse Document Frequency) for Search Term 
-Compared to the previous table from question 1, the terms with the highest TF-IDF values are different, and arguably more interesting. For example, the terms with the highest TF-IDF for the search term *prostate cancer* are *prostate*, *androgen*, *psa*, *prostatectomy*, and *castration*. Some of these words (*prostate*) appear on the previous list and are more generalized to the search term, whereas the others (*androgen*, *psa*, *prostatectomy*, *castration*) are unique to this list, and provide a little more detail.
+
+Compared to the previous table from part 1, there are some differences in the terms with the highest TF-IDF values. For example, the terms with the highest TF-IDF for the search term *prostate cancer* are *prostate*, *androgen*, *psa*, *prostatectomy*, and *castration*. Some of these words (*prostate*) appear on the previous list and are more generalized to the search term, whereas the others (*androgen*, *psa*, *prostatectomy*, *castration*) are unique to this list, and provide a little more detail and context about the text. To my understanding, terms that are less common across documents would have a higher inverse document frequency, which explains why there are differences in the words that appear on this list compared to the table from part 1, which showed the most frequent words overall.
+
+The top 5 tokens from each search term with the highest TF-IDF values are:
+
+* search term "covid": *covid*, *pandemic*, *coronavirus*, *sars*, *cov*
+
+* search term "meningitis": *meningitis*, *meningeal*, *pachymeningitis*, *csf*, *meninges*
+
+* search term "prostate cancer": *prostate*, *androgen*, *psa*, *prostatectomy*, *castration*
+
+* search term "preeclampsia": *eclampsia*, *preeclampsia*, *pregnancy*, *maternal*, *gestational*
+
+* search term "cystic fibrosis": *cf*, *fibrosis*, *cystic*, *cftr*, *sweat*
 
 ```{r}
 input %>%
@@ -205,8 +226,8 @@ input %>%
   bind_tf_idf(token, term, n) %>%
   group_by(term) %>%
   top_n(5, tf_idf) %>%
-  arrange(desc(tf_idf)) %>%
-  select(term, token, n, tf_idf) %>% knitr::kable(caption="5 Tokens from each Search Term with Highest TF-IDF Value")
+  arrange(desc(tf_idf), .by_group = TRUE) %>%
+  select(term, token, n, tf_idf, tf, idf) %>% knitr::kable(caption="5 Tokens from each Search Term with Highest TF-IDF Value")
 ```
 
 
