@@ -219,7 +219,7 @@ The top 5 tokens from each search term with the highest TF-IDF values are:
 
 * search term "cystic fibrosis": *cf*, *fibrosis*, *cystic*, *cftr*, *sweat*
 
-```{r}
+```{r tf-idf}
 input %>%
   unnest_tokens(token, abstract) %>%
   count(token, term) %>%
